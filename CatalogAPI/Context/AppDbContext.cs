@@ -9,7 +9,7 @@ public class AppDbContext : DbContext
     {
     }
 
-    DbSet<Catalog>? Catalogs { get; set; }
-    DbSet<Product>? Products { get; set; }
+    public DbSet<Catalog>? Catalogs { get; set; }
+    public DbSet<Product>? Products { get; set; }
 
 }
