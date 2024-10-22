@@ -16,69 +16,85 @@ namespace CatalogAPI.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<Product>> Get()
         {
-            var products = _context.Products.ToList();
-            if (products is null)
+            try
             {
-                return NotFound("Produtos não encontrados...");
+                return _context.Products.AsNoTracking().ToList();
             }
-
-            return products;
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status404NotFound,
+                    "Ocorreu um erro ao processar sua solicitação");
+            }
         }
 
-        [HttpGet("{id:int}", Name="GetProduct")]
+        [HttpGet("{id:int}", Name = "GetProduct")]
         public ActionResult<Product> Get(int id)
         {
-            var product = _context.Products.FirstOrDefault(p => p.ProductId.Equals(id));
-
-            if (product == null)
+            try
             {
-                return NotFound("Produto não encontrado");
+                return _context.Products.AsNoTracking().FirstOrDefault(p => p.ProductId.Equals(id));
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status404NotFound,
+                    "Ocorreu um erro ao processar sua solicitação");
             }
 
-            return product;
         }
 
         [HttpPost]
-        public ActionResult Post(Product product) 
+        public ActionResult Post(Product product)
         {
-            if (product is null)
+            try
             {
-                return BadRequest();
+                _context.Products.Add(product);
+                _context.SaveChanges();
+
+                return new CreatedAtRouteResult("GetProduct",
+                    new { id = product.ProductId }, product);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest,
+                    "Ocorreu um erro ao processar sua solicitação");
             }
 
-            _context.Products.Add(product);
-            _context.SaveChanges();
-
-            return new CreatedAtRouteResult("GetProduct", 
-                new {id = product.ProductId}, product);
         }
 
-        [HttpPut("{id:int}")] 
+        [HttpPut("{id:int}")]
         public ActionResult Put(int id, Product product)
         {
-            if(id != product.ProductId)
+            try
             {
-                return BadRequest();
-            }
-            _context.Entry(product).State = EntityState.Modified;
-            _context.SaveChanges();
+                _context.Entry(product).State = EntityState.Modified;
+                _context.SaveChanges();
 
-            return Ok(product);
+                return Ok(product);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest,
+                    "Ocorreu um erro ao processar sua solicitação");
+            }
         }
 
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {
-            var product = _context.Products.FirstOrDefault(p => p.ProductId.Equals(id));
-            if(product is null)
+            try
             {
-                return NotFound("Produto não localizado");
+                var product = _context.Products.FirstOrDefault(p => p.ProductId.Equals(id));
+
+                _context.Products.Remove(product);
+                _context.SaveChanges();
+
+                return Ok(product);
             }
-
-            _context.Products.Remove(product);
-            _context.SaveChanges();
-
-            return Ok(product);
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status404NotFound,
+                    "Ocorreu um erro ao processar sua solicitação");
+            }
         }
     }
 }

@@ -17,83 +17,101 @@ namespace CatalogAPI.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<Catalog>> Get()
         {
-            var catalogs = _context.Catalogs.ToList();
-            
-            if (catalogs is null) {
-                return NotFound("Categorias não encontradas...");
+            try
+            {
+                return _context.Catalogs.AsNoTracking().ToList();
             }
-
-            return catalogs;
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Ocorreu um erro ao processar sua solicitação");
+            }
         }
 
         [HttpGet("Products")]
         public ActionResult<IEnumerable<Catalog>> GetProductsCatalogs()
         {
-            var products = _context.Catalogs.Include(p => p.Products).ToList();
-            
-            if(products is null)
+            try
             {
-                return NotFound();
+                return _context.Catalogs.AsNoTracking().Include(p => p.Products).ToList();
             }
-
-            return products;
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Ocorreu um erro ao processar sua solicitação");
+            }
         }
 
         [HttpGet("{id:int}", Name = "GetCatalgo")]
         public ActionResult<Catalog> Get(int id)
         {
-            var catalog = _context.Catalogs.FirstOrDefault(p => p.Equals(id));
-
-            if (catalog == null)
+            try
             {
-                return NotFound("Categoria não encontrada");
+                var catalog = _context.Catalogs.AsNoTracking().FirstOrDefault(p => p.Equals(id));
+                return Ok(catalog);
+
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Ocorreu um erro ao processar sua solicitação");
             }
 
-            return Ok(catalog);
+
         }
 
         [HttpPost]
         public ActionResult Post(Catalog catalog)
         {
-            if (catalog is null)
+            try
             {
-                return BadRequest();
+                _context.Catalogs.Add(catalog);
+                _context.SaveChanges();
+
+                return new CreatedAtRouteResult("GetCatalog", new { id = catalog.CatalogId }, catalog);
             }
-
-            _context.Catalogs.Add(catalog);
-            _context.SaveChanges();
-
-            return new CreatedAtRouteResult("GetCatalog", new { id = catalog.CatalogId }, catalog);
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest,
+                    "Ocorreu um erro ao processar sua solicitação");
+            }            
         }
 
         [HttpPut("{id:int}")]
         public ActionResult Put(int id,  Catalog catalog) 
         {
-            if(id != catalog.CatalogId)
+            try
             {
-                return BadRequest();
+                _context.Entry(catalog).State = EntityState.Modified;
+                _context.SaveChanges();
+
+                return Ok(catalog);
             }
-
-            _context.Entry(catalog).State = EntityState.Modified;
-            _context.SaveChanges();
-
-            return Ok(catalog);
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest,
+                    "Ocorreu um erro ao processar sua solicitação");
+            }
+            
         }
 
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {
-            var catalog = _context.Catalogs.FirstOrDefault(p => p.CatalogId.Equals(id));
-
-            if(catalog == null)
+            try
             {
-                return NotFound();
+                var catalog = _context.Catalogs.FirstOrDefault(p => p.CatalogId.Equals(id));
+
+                _context.Catalogs.Remove(catalog);
+                _context.SaveChanges();
+
+                return Ok(catalog);
             }
-
-            _context.Catalogs.Remove(catalog);
-            _context.SaveChanges();
-
-            return Ok(catalog);
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status404NotFound,
+                    "Ocorreu um erro ao processar sua solicitação");
+            }
         }
 
     }
